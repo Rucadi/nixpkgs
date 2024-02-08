@@ -75,14 +75,14 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "code-server";
-  version = "4.19.1";
+  version = "4.21.0";
 
   src = fetchFromGitHub {
     owner = "coder";
     repo = "code-server";
     rev = "v${finalAttrs.version}";
     fetchSubmodules = true;
-    hash = "sha256-J+6zuqVf1YKQjiRiqO4867DEwYzZsgQYgbsRXPo2hwY=";
+    hash = "sha256-3hajrBqW422924RbRogqOOkGw4jmAHP0gBwXnWmEwCM=";
   };
 
   yarnCache = stdenv.mkDerivation {
@@ -114,11 +114,12 @@ stdenv.mkDerivation (finalAttrs: {
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-g2rwB+PuWuYgrzIuW0ngia7cdPMC8s7ffBEkbmPPzB4=";
+    outputHash = "sha256-LugIQq9Tix06mh3F44NLVUCgw7N84jBM1gR0kyZNK44=";
   };
 
   nativeBuildInputs = [
     nodejs
+    nodejs.pkgs.node-pre-gyp
     yarn'
     python
     pkg-config
@@ -291,7 +292,9 @@ stdenv.mkDerivation (finalAttrs: {
     cp -R -T release "$out/libexec/code-server"
 
     # install only production dependencies
-    yarn --offline --cwd "$out/libexec/code-server" --production
+    yarn --offline --cwd "$out/libexec/code-server" --production --frozen-lockfile --ignore-scripts --no-progress --non-interactive
+    node-pre-gyp rebuild -C $out/libexec/code-server/node_modules/argon2
+
 
     # create wrapper
     makeWrapper "${nodejs}/bin/node" "$out/bin/code-server" \
