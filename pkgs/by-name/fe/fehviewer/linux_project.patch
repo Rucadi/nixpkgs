@@ -1,0 +1,548 @@
+diff --git a/.gitignore b/.gitignore
+index 2a457d6..7e674ee 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -52,7 +52,6 @@ app.*.map.json
+ 
+ #/lib/models/*.dart
+ /web/
+-/linux/
+ .fvm/flutter_sdk
+ /assets/openl.json
+ /assets/sentry.json
+diff --git a/.metadata b/.metadata
+index 262ceed..82c76b0 100644
+--- a/.metadata
++++ b/.metadata
+@@ -1,11 +1,11 @@
+ # This file tracks properties of this Flutter project.
+ # Used by Flutter tool to assess capabilities and perform upgrades etc.
+ #
+-# This file should be version controlled.
++# This file should be version controlled and should not be manually edited.
+ 
+ version:
+-  revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-  channel: stable
++  revision: "6c4930c4ac86fb286f30e31d0ec8bffbcbb9953e"
++  channel: "stable"
+ 
+ project_type: app
+ 
+@@ -13,26 +13,11 @@ project_type: app
+ migration:
+   platforms:
+     - platform: root
+-      create_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-      base_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-    - platform: android
+-      create_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-      base_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-    - platform: ios
+-      create_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-      base_revision: 135454af32477f815a7525073027a3ff9eff1bfd
++      create_revision: 6c4930c4ac86fb286f30e31d0ec8bffbcbb9953e
++      base_revision: 6c4930c4ac86fb286f30e31d0ec8bffbcbb9953e
+     - platform: linux
+-      create_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-      base_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-    - platform: macos
+-      create_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-      base_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-    - platform: web
+-      create_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-      base_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-    - platform: windows
+-      create_revision: 135454af32477f815a7525073027a3ff9eff1bfd
+-      base_revision: 135454af32477f815a7525073027a3ff9eff1bfd
++      create_revision: 6c4930c4ac86fb286f30e31d0ec8bffbcbb9953e
++      base_revision: 6c4930c4ac86fb286f30e31d0ec8bffbcbb9953e
+ 
+   # User provided section
+ 
+diff --git a/linux/.gitignore b/linux/.gitignore
+new file mode 100644
+index 0000000..d3896c9
+--- /dev/null
++++ b/linux/.gitignore
+@@ -0,0 +1 @@
++flutter/ephemeral
+diff --git a/linux/CMakeLists.txt b/linux/CMakeLists.txt
+new file mode 100644
+index 0000000..d68cf8c
+--- /dev/null
++++ b/linux/CMakeLists.txt
+@@ -0,0 +1,139 @@
++# Project-level configuration.
++cmake_minimum_required(VERSION 3.10)
++project(runner LANGUAGES CXX)
++
++# The name of the executable created for the application. Change this to change
++# the on-disk name of your application.
++set(BINARY_NAME "fehviewer")
++# The unique GTK application identifier for this application. See:
++# https://wiki.gnome.org/HowDoI/ChooseApplicationID
++set(APPLICATION_ID "com.honjow.fehviewer")
++
++# Explicitly opt in to modern CMake behaviors to avoid warnings with recent
++# versions of CMake.
++cmake_policy(SET CMP0063 NEW)
++
++# Load bundled libraries from the lib/ directory relative to the binary.
++set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
++
++# Root filesystem for cross-building.
++if(FLUTTER_TARGET_PLATFORM_SYSROOT)
++  set(CMAKE_SYSROOT ${FLUTTER_TARGET_PLATFORM_SYSROOT})
++  set(CMAKE_FIND_ROOT_PATH ${CMAKE_SYSROOT})
++  set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
++  set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
++  set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
++  set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
++endif()
++
++# Define build configuration options.
++if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
++  set(CMAKE_BUILD_TYPE "Debug" CACHE
++    STRING "Flutter build mode" FORCE)
++  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
++    "Debug" "Profile" "Release")
++endif()
++
++# Compilation settings that should be applied to most targets.
++#
++# Be cautious about adding new options here, as plugins use this function by
++# default. In most cases, you should add new options to specific targets instead
++# of modifying this function.
++function(APPLY_STANDARD_SETTINGS TARGET)
++  target_compile_features(${TARGET} PUBLIC cxx_std_14)
++  target_compile_options(${TARGET} PRIVATE -Wall -Werror)
++  target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
++  target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
++endfunction()
++
++# Flutter library and tool build rules.
++set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
++add_subdirectory(${FLUTTER_MANAGED_DIR})
++
++# System-level dependencies.
++find_package(PkgConfig REQUIRED)
++pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
++
++add_definitions(-DAPPLICATION_ID="${APPLICATION_ID}")
++
++# Define the application target. To change its name, change BINARY_NAME above,
++# not the value here, or `flutter run` will no longer work.
++#
++# Any new source files that you add to the application should be added here.
++add_executable(${BINARY_NAME}
++  "main.cc"
++  "my_application.cc"
++  "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
++)
++
++# Apply the standard set of build settings. This can be removed for applications
++# that need different build settings.
++apply_standard_settings(${BINARY_NAME})
++
++# Add dependency libraries. Add any application-specific dependencies here.
++target_link_libraries(${BINARY_NAME} PRIVATE flutter)
++target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
++
++# Run the Flutter tool portions of the build. This must not be removed.
++add_dependencies(${BINARY_NAME} flutter_assemble)
++
++# Only the install-generated bundle's copy of the executable will launch
++# correctly, since the resources must in the right relative locations. To avoid
++# people trying to run the unbundled copy, put it in a subdirectory instead of
++# the default top-level location.
++set_target_properties(${BINARY_NAME}
++  PROPERTIES
++  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/intermediates_do_not_run"
++)
++
++
++# Generated plugin build rules, which manage building the plugins and adding
++# them to the application.
++include(flutter/generated_plugins.cmake)
++
++
++# === Installation ===
++# By default, "installing" just makes a relocatable bundle in the build
++# directory.
++set(BUILD_BUNDLE_DIR "${PROJECT_BINARY_DIR}/bundle")
++if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
++  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
++endif()
++
++# Start with a clean build bundle directory every time.
++install(CODE "
++  file(REMOVE_RECURSE \"${BUILD_BUNDLE_DIR}/\")
++  " COMPONENT Runtime)
++
++set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
++set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib")
++
++install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
++  COMPONENT Runtime)
++
++install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
++  COMPONENT Runtime)
++
++install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
++  COMPONENT Runtime)
++
++foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
++  install(FILES "${bundled_library}"
++    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
++    COMPONENT Runtime)
++endforeach(bundled_library)
++
++# Fully re-copy the assets directory on each build to avoid having stale files
++# from a previous install.
++set(FLUTTER_ASSET_DIR_NAME "flutter_assets")
++install(CODE "
++  file(REMOVE_RECURSE \"${INSTALL_BUNDLE_DATA_DIR}/${FLUTTER_ASSET_DIR_NAME}\")
++  " COMPONENT Runtime)
++install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
++  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
++
++# Install the AOT library on non-Debug builds only.
++if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
++  install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
++    COMPONENT Runtime)
++endif()
+diff --git a/linux/flutter/CMakeLists.txt b/linux/flutter/CMakeLists.txt
+new file mode 100644
+index 0000000..d5bd016
+--- /dev/null
++++ b/linux/flutter/CMakeLists.txt
+@@ -0,0 +1,88 @@
++# This file controls Flutter-level build steps. It should not be edited.
++cmake_minimum_required(VERSION 3.10)
++
++set(EPHEMERAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ephemeral")
++
++# Configuration provided via flutter tool.
++include(${EPHEMERAL_DIR}/generated_config.cmake)
++
++# TODO: Move the rest of this into files in ephemeral. See
++# https://github.com/flutter/flutter/issues/57146.
++
++# Serves the same purpose as list(TRANSFORM ... PREPEND ...),
++# which isn't available in 3.10.
++function(list_prepend LIST_NAME PREFIX)
++    set(NEW_LIST "")
++    foreach(element ${${LIST_NAME}})
++        list(APPEND NEW_LIST "${PREFIX}${element}")
++    endforeach(element)
++    set(${LIST_NAME} "${NEW_LIST}" PARENT_SCOPE)
++endfunction()
++
++# === Flutter Library ===
++# System-level dependencies.
++find_package(PkgConfig REQUIRED)
++pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
++pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
++pkg_check_modules(GIO REQUIRED IMPORTED_TARGET gio-2.0)
++
++set(FLUTTER_LIBRARY "${EPHEMERAL_DIR}/libflutter_linux_gtk.so")
++
++# Published to parent scope for install step.
++set(FLUTTER_LIBRARY ${FLUTTER_LIBRARY} PARENT_SCOPE)
++set(FLUTTER_ICU_DATA_FILE "${EPHEMERAL_DIR}/icudtl.dat" PARENT_SCOPE)
++set(PROJECT_BUILD_DIR "${PROJECT_DIR}/build/" PARENT_SCOPE)
++set(AOT_LIBRARY "${PROJECT_DIR}/build/lib/libapp.so" PARENT_SCOPE)
++
++list(APPEND FLUTTER_LIBRARY_HEADERS
++  "fl_basic_message_channel.h"
++  "fl_binary_codec.h"
++  "fl_binary_messenger.h"
++  "fl_dart_project.h"
++  "fl_engine.h"
++  "fl_json_message_codec.h"
++  "fl_json_method_codec.h"
++  "fl_message_codec.h"
++  "fl_method_call.h"
++  "fl_method_channel.h"
++  "fl_method_codec.h"
++  "fl_method_response.h"
++  "fl_plugin_registrar.h"
++  "fl_plugin_registry.h"
++  "fl_standard_message_codec.h"
++  "fl_standard_method_codec.h"
++  "fl_string_codec.h"
++  "fl_value.h"
++  "fl_view.h"
++  "flutter_linux.h"
++)
++list_prepend(FLUTTER_LIBRARY_HEADERS "${EPHEMERAL_DIR}/flutter_linux/")
++add_library(flutter INTERFACE)
++target_include_directories(flutter INTERFACE
++  "${EPHEMERAL_DIR}"
++)
++target_link_libraries(flutter INTERFACE "${FLUTTER_LIBRARY}")
++target_link_libraries(flutter INTERFACE
++  PkgConfig::GTK
++  PkgConfig::GLIB
++  PkgConfig::GIO
++)
++add_dependencies(flutter flutter_assemble)
++
++# === Flutter tool backend ===
++# _phony_ is a non-existent file to force this command to run every time,
++# since currently there's no way to get a full input/output list from the
++# flutter tool.
++add_custom_command(
++  OUTPUT ${FLUTTER_LIBRARY} ${FLUTTER_LIBRARY_HEADERS}
++    ${CMAKE_CURRENT_BINARY_DIR}/_phony_
++  COMMAND ${CMAKE_COMMAND} -E env
++    ${FLUTTER_TOOL_ENVIRONMENT}
++    "${FLUTTER_ROOT}/packages/flutter_tools/bin/tool_backend.sh"
++      ${FLUTTER_TARGET_PLATFORM} ${CMAKE_BUILD_TYPE}
++  VERBATIM
++)
++add_custom_target(flutter_assemble DEPENDS
++  "${FLUTTER_LIBRARY}"
++  ${FLUTTER_LIBRARY_HEADERS}
++)
+diff --git a/linux/flutter/generated_plugin_registrant.cc b/linux/flutter/generated_plugin_registrant.cc
+new file mode 100644
+index 0000000..74f3efe
+--- /dev/null
++++ b/linux/flutter/generated_plugin_registrant.cc
+@@ -0,0 +1,31 @@
++//
++//  Generated file. Do not edit.
++//
++
++// clang-format off
++
++#include "generated_plugin_registrant.h"
++
++#include <bitsdojo_window_linux/bitsdojo_window_plugin.h>
++#include <isar_flutter_libs/isar_flutter_libs_plugin.h>
++#include <sentry_flutter/sentry_flutter_plugin.h>
++#include <url_launcher_linux/url_launcher_plugin.h>
++#include <window_size/window_size_plugin.h>
++
++void fl_register_plugins(FlPluginRegistry* registry) {
++  g_autoptr(FlPluginRegistrar) bitsdojo_window_linux_registrar =
++      fl_plugin_registry_get_registrar_for_plugin(registry, "BitsdojoWindowPlugin");
++  bitsdojo_window_plugin_register_with_registrar(bitsdojo_window_linux_registrar);
++  g_autoptr(FlPluginRegistrar) isar_flutter_libs_registrar =
++      fl_plugin_registry_get_registrar_for_plugin(registry, "IsarFlutterLibsPlugin");
++  isar_flutter_libs_plugin_register_with_registrar(isar_flutter_libs_registrar);
++  g_autoptr(FlPluginRegistrar) sentry_flutter_registrar =
++      fl_plugin_registry_get_registrar_for_plugin(registry, "SentryFlutterPlugin");
++  sentry_flutter_plugin_register_with_registrar(sentry_flutter_registrar);
++  g_autoptr(FlPluginRegistrar) url_launcher_linux_registrar =
++      fl_plugin_registry_get_registrar_for_plugin(registry, "UrlLauncherPlugin");
++  url_launcher_plugin_register_with_registrar(url_launcher_linux_registrar);
++  g_autoptr(FlPluginRegistrar) window_size_registrar =
++      fl_plugin_registry_get_registrar_for_plugin(registry, "WindowSizePlugin");
++  window_size_plugin_register_with_registrar(window_size_registrar);
++}
+diff --git a/linux/flutter/generated_plugin_registrant.h b/linux/flutter/generated_plugin_registrant.h
+new file mode 100644
+index 0000000..e0f0a47
+--- /dev/null
++++ b/linux/flutter/generated_plugin_registrant.h
+@@ -0,0 +1,15 @@
++//
++//  Generated file. Do not edit.
++//
++
++// clang-format off
++
++#ifndef GENERATED_PLUGIN_REGISTRANT_
++#define GENERATED_PLUGIN_REGISTRANT_
++
++#include <flutter_linux/flutter_linux.h>
++
++// Registers Flutter plugins.
++void fl_register_plugins(FlPluginRegistry* registry);
++
++#endif  // GENERATED_PLUGIN_REGISTRANT_
+diff --git a/linux/flutter/generated_plugins.cmake b/linux/flutter/generated_plugins.cmake
+new file mode 100644
+index 0000000..6c360e4
+--- /dev/null
++++ b/linux/flutter/generated_plugins.cmake
+@@ -0,0 +1,30 @@
++#
++# Generated file, do not edit.
++#
++
++list(APPEND FLUTTER_PLUGIN_LIST
++  bitsdojo_window_linux
++  isar_flutter_libs
++  sentry_flutter
++  url_launcher_linux
++  window_size
++)
++
++list(APPEND FLUTTER_FFI_PLUGIN_LIST
++  blurhash_ffi
++  jni
++)
++
++set(PLUGIN_BUNDLED_LIBRARIES)
++
++foreach(plugin ${FLUTTER_PLUGIN_LIST})
++  add_subdirectory(flutter/ephemeral/.plugin_symlinks/${plugin}/linux plugins/${plugin})
++  target_link_libraries(${BINARY_NAME} PRIVATE ${plugin}_plugin)
++  list(APPEND PLUGIN_BUNDLED_LIBRARIES $<TARGET_FILE:${plugin}_plugin>)
++  list(APPEND PLUGIN_BUNDLED_LIBRARIES ${${plugin}_bundled_libraries})
++endforeach(plugin)
++
++foreach(ffi_plugin ${FLUTTER_FFI_PLUGIN_LIST})
++  add_subdirectory(flutter/ephemeral/.plugin_symlinks/${ffi_plugin}/linux plugins/${ffi_plugin})
++  list(APPEND PLUGIN_BUNDLED_LIBRARIES ${${ffi_plugin}_bundled_libraries})
++endforeach(ffi_plugin)
+diff --git a/linux/main.cc b/linux/main.cc
+new file mode 100644
+index 0000000..e7c5c54
+--- /dev/null
++++ b/linux/main.cc
+@@ -0,0 +1,6 @@
++#include "my_application.h"
++
++int main(int argc, char** argv) {
++  g_autoptr(MyApplication) app = my_application_new();
++  return g_application_run(G_APPLICATION(app), argc, argv);
++}
+diff --git a/linux/my_application.cc b/linux/my_application.cc
+new file mode 100644
+index 0000000..4a6a55d
+--- /dev/null
++++ b/linux/my_application.cc
+@@ -0,0 +1,104 @@
++#include "my_application.h"
++
++#include <flutter_linux/flutter_linux.h>
++#ifdef GDK_WINDOWING_X11
++#include <gdk/gdkx.h>
++#endif
++
++#include "flutter/generated_plugin_registrant.h"
++
++struct _MyApplication {
++  GtkApplication parent_instance;
++  char** dart_entrypoint_arguments;
++};
++
++G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
++
++// Implements GApplication::activate.
++static void my_application_activate(GApplication* application) {
++  MyApplication* self = MY_APPLICATION(application);
++  GtkWindow* window =
++      GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
++
++  // Use a header bar when running in GNOME as this is the common style used
++  // by applications and is the setup most users will be using (e.g. Ubuntu
++  // desktop).
++  // If running on X and not using GNOME then just use a traditional title bar
++  // in case the window manager does more exotic layout, e.g. tiling.
++  // If running on Wayland assume the header bar will work (may need changing
++  // if future cases occur).
++  gboolean use_header_bar = TRUE;
++#ifdef GDK_WINDOWING_X11
++  GdkScreen* screen = gtk_window_get_screen(window);
++  if (GDK_IS_X11_SCREEN(screen)) {
++    const gchar* wm_name = gdk_x11_screen_get_window_manager_name(screen);
++    if (g_strcmp0(wm_name, "GNOME Shell") != 0) {
++      use_header_bar = FALSE;
++    }
++  }
++#endif
++  if (use_header_bar) {
++    GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
++    gtk_widget_show(GTK_WIDGET(header_bar));
++    gtk_header_bar_set_title(header_bar, "fehviewer");
++    gtk_header_bar_set_show_close_button(header_bar, TRUE);
++    gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
++  } else {
++    gtk_window_set_title(window, "fehviewer");
++  }
++
++  gtk_window_set_default_size(window, 1280, 720);
++  gtk_widget_show(GTK_WIDGET(window));
++
++  g_autoptr(FlDartProject) project = fl_dart_project_new();
++  fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);
++
++  FlView* view = fl_view_new(project);
++  gtk_widget_show(GTK_WIDGET(view));
++  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
++
++  fl_register_plugins(FL_PLUGIN_REGISTRY(view));
++
++  gtk_widget_grab_focus(GTK_WIDGET(view));
++}
++
++// Implements GApplication::local_command_line.
++static gboolean my_application_local_command_line(GApplication* application, gchar*** arguments, int* exit_status) {
++  MyApplication* self = MY_APPLICATION(application);
++  // Strip out the first argument as it is the binary name.
++  self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
++
++  g_autoptr(GError) error = nullptr;
++  if (!g_application_register(application, nullptr, &error)) {
++     g_warning("Failed to register: %s", error->message);
++     *exit_status = 1;
++     return TRUE;
++  }
++
++  g_application_activate(application);
++  *exit_status = 0;
++
++  return TRUE;
++}
++
++// Implements GObject::dispose.
++static void my_application_dispose(GObject* object) {
++  MyApplication* self = MY_APPLICATION(object);
++  g_clear_pointer(&self->dart_entrypoint_arguments, g_strfreev);
++  G_OBJECT_CLASS(my_application_parent_class)->dispose(object);
++}
++
++static void my_application_class_init(MyApplicationClass* klass) {
++  G_APPLICATION_CLASS(klass)->activate = my_application_activate;
++  G_APPLICATION_CLASS(klass)->local_command_line = my_application_local_command_line;
++  G_OBJECT_CLASS(klass)->dispose = my_application_dispose;
++}
++
++static void my_application_init(MyApplication* self) {}
++
++MyApplication* my_application_new() {
++  return MY_APPLICATION(g_object_new(my_application_get_type(),
++                                     "application-id", APPLICATION_ID,
++                                     "flags", G_APPLICATION_NON_UNIQUE,
++                                     nullptr));
++}
+diff --git a/linux/my_application.h b/linux/my_application.h
+new file mode 100644
+index 0000000..72271d5
+--- /dev/null
++++ b/linux/my_application.h
+@@ -0,0 +1,18 @@
++#ifndef FLUTTER_MY_APPLICATION_H_
++#define FLUTTER_MY_APPLICATION_H_
++
++#include <gtk/gtk.h>
++
++G_DECLARE_FINAL_TYPE(MyApplication, my_application, MY, APPLICATION,
++                     GtkApplication)
++
++/**
++ * my_application_new:
++ *
++ * Creates a new Flutter-based application.
++ *
++ * Returns: a new #MyApplication.
++ */
++MyApplication* my_application_new();
++
++#endif  // FLUTTER_MY_APPLICATION_H_

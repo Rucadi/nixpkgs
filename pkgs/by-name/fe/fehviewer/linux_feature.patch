@@ -1,0 +1,13 @@
+diff --git a/lib/common/global.dart b/lib/common/global.dart
+index 69a253f..60d26d7 100644
+--- a/lib/common/global.dart
++++ b/lib/common/global.dart
+@@ -156,7 +156,7 @@ class Global {
+             extStorePath
+         : '';
+ 
+-    if (!GetPlatform.isWindows) {
++    if (!GetPlatform.isWindows && !GetPlatform.isLinux) {
+       packageInfo = await PackageInfo.fromPlatform();
+     }
+ 

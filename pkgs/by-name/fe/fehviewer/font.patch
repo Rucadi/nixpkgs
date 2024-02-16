@@ -1,0 +1,30 @@
+diff --git a/lib/const/theme_colors.dart b/lib/const/theme_colors.dart
+index 75fc95e..585efc3 100644
+--- a/lib/const/theme_colors.dart
++++ b/lib/const/theme_colors.dart
+@@ -1,11 +1,12 @@
+ import 'package:fehviewer/common/colors.dart';
+ import 'package:flutter/cupertino.dart';
++import 'package:google_fonts/google_fonts.dart'; 
+ 
+ import 'const.dart';
+ 
+ final ehTextTheme = const CupertinoTextThemeData().copyWith(
+   textStyle: const CupertinoTextThemeData().textStyle.copyWith(
+-        // fontFamily: EHConst.fontFamily,
++        fontFamily: GoogleFonts.openSans().fontFamily,
+         fontFamilyFallback: EHConst.fontFamilyFallback,
+       ),
+ );
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 63cf849..777a714 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -81,6 +81,7 @@ dependencies:
+   #translator: ^0.1.7
+   google_translator:
+     git: https://github.com/aaalkoud/google-translator.git
++  google_fonts: ^6.1.0
+ #  orientation: ^1.3.0
+   vibration: ^1.7.4-nullsafety.0
+   device_info: ^2.0.1
