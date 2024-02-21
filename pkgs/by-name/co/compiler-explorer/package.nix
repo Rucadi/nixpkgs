@@ -26,33 +26,59 @@
 , llvmPackages_17
 }:
 let
-  pname = "compiler-explorer";
-  version = "10723";
-  src = fetchFromGitHub {
-    owner = "compiler-explorer";
-    repo = "compiler-explorer";
-    rev = "gh-${version}";
-    hash = "sha256-e8G1WNII61FWGscxSTlB2GvDP5e3945AslDP2h4jr2k=";
- };
-   NODE_DIR = "${nodejs_20}";
- nodeDeps = buildNpmPackage{
-    inherit version src NODE_DIR;
-    pname = "${pname}-node-deps";
-    npmDepsHash = "sha256-8e8JtVeJXx1NxwYlN4SRJB2K/RJv9plnAwlRNWHWD1M=";
-    nativeBuildInputs = [cypress nodejs_20 husky typescript];
-    CYPRESS_INSTALL_BINARY = 0;
-    dontNpmBuild = true;
-    postPatch = "rm Makefile";
-    buildPhase = "";
-    installPhase = ''
-      runHook preInstall
 
-      mkdir -p $out/lib
-      cp -r node_modules $out/lib
+    defaultGcc = gcc13;
+    defaultClang = clang_17;
+    gccVersions = [gcc48
+                    gcc49
+                    gcc6
+                    gcc7
+                    gcc8
+                    gcc9
+                    gcc10
+                    gcc11
+                    gcc12
+                    gcc13];
 
-      runHook postInstall
-    '';
- };
+    clangVersions = [
+                clang_9
+                clang_11
+                clang_12
+                clang_13
+                clang_14
+                clang_15
+                clang_16
+                clang_17
+    ];
+
+
+    pname = "compiler-explorer";
+    version = "10723";
+    src = fetchFromGitHub {
+        owner = "compiler-explorer";
+        repo = "compiler-explorer";
+        rev = "gh-${version}";
+        hash = "sha256-e8G1WNII61FWGscxSTlB2GvDP5e3945AslDP2h4jr2k=";
+    };
+    NODE_DIR = "${nodejs_20}";
+    nodeDeps = buildNpmPackage{
+        inherit version src NODE_DIR;
+        pname = "${pname}-node-deps";
+        npmDepsHash = "sha256-8e8JtVeJXx1NxwYlN4SRJB2K/RJv9plnAwlRNWHWD1M=";
+        nativeBuildInputs = [cypress nodejs_20 husky typescript];
+        CYPRESS_INSTALL_BINARY = 0;
+        dontNpmBuild = true;
+        postPatch = "rm Makefile";
+        buildPhase = "";
+        installPhase = ''
+        runHook preInstall
+
+        mkdir -p $out/lib
+        cp -r node_modules $out/lib
+
+        runHook postInstall
+        '';
+    };
 
     pythonJsonToDot = writeText "jstodot"  ''
     import sys
@@ -76,6 +102,17 @@ let
                     echo '${builtins.toJSON x}' | ${python3}/bin/python ${pythonJsonToDot} > $out
                     '');
                     
+
+    createCompilerAttribute = (compiler: command: compiler-name: {
+        exe = "${compiler}/bin/${command}";
+        name = "${compiler-name}-${compiler.version}";
+    });
+    
+    generateCompilers = (compilers: command : compiler-name:
+        lib.foldl' (attrs: compiler: attrs // { "${compiler-name}-${compiler.version}" = createCompilerAttribute compiler command compiler-name; }) {} compilers);
+
+    generateCompilerStrings = (compilers: name : builtins.concatStringsSep ":" (map (pkg: "${name}-${pkg.version}") compilers));
+
 
     settings = 
     {
@@ -105,8 +142,8 @@ let
             python3="${lib.getExe python3}";
             cmake="${cmake}/bin/cmake";
             useninja="false";
-            ld="${gcc13}/bin/ld";
-            readElf="${gcc13}/bin/readelf";
+            ld="${defaultGcc}/bin/ld";
+            readElf="${defaultGcc}/bin/readelf";
             mkfido="${coreutils}/bin/mkfifo";
             headptrackPath="";
             ldPath="\${exePath}/../lib|\${exePath}/../lib32|\${exePath}/../lib64";
@@ -151,102 +188,31 @@ let
     cpp =
     {
         compilers="&gcc:&clang";
-        group.gcc = {
-                compilers = "gcc48:gcc49:gcc6:gcc7:gcc8:gcc9:gcc10:gcc11:gcc12:gcc13";
+        group =
+        {
+            gcc = {
+                compilers = generateCompilerStrings gccVersions "gcc";
                 compilerCategories = "gcc";
             };
 
-        compiler = {
-            gcc48 = {
-                exe = "${gcc48}/bin/g++";
-                name = "gcc48";
+            clang = {
+                compilers=generateCompilerStrings clangVersions "clang";
+                intelAsm="-mllvm --x86-asm-syntax=intel";
+                compilerType="clang";
+                compilerCategories="clang";
             };
-            gcc49 = {
-                exe = "${gcc49}/bin/g++";
-                name = "gcc49";
-            };
-            gcc6 = {
-                exe = "${gcc6}/bin/g++";
-                name = "gcc6";
-            };
-            gcc7 = {
-                exe = "${gcc7}/bin/g++";
-                name = "gcc7";
-            };
-            gcc8 = {
-                exe = "${gcc8}/bin/g++";
-                name = "gcc8";
-            };
-            gcc9 = {
-                exe = "${gcc9}/bin/g++";
-                name = "gcc9";
-            };
-            gcc10 = {
-                exe = "${gcc10}/bin/g++";
-                name = "gcc10";
-            };
-            gcc11 = {
-                exe = "${gcc11}/bin/g++";
-                name = "gcc11";
-            };
-            gcc12 = {
-                exe = "${gcc12}/bin/g++";
-                name = "gcc12";
-            };
-            gcc13 = {
-                exe = "${gcc13}/bin/g++";
-                name = "gcc13";
-            };
-        };
-        
-        group.clang = {
-            compilers="clang_9:clang_11:clang_12:clang_13:clang_14:clang_15:clang_16:clang_17";
-            intelAsm="-mllvm --x86-asm-syntax=intel";
-            compilerType="clang";
-            compilerCategories="clang";
         };
 
-        compiler = {
-             clang_9 ={
-                exe = "${clang_9}/bin/clang++";
-                name = "clang_9";
-             };
-             clang_11 ={
-                exe = "${clang_11}/bin/clang++";
-                name = "clang_11";
-             };
-             clang_12 ={
-                exe = "${clang_12}/bin/clang++";
-                name = "clang_12";
-             };
-             clang_13 ={
-                exe = "${clang_13}/bin/clang++";
-                name = "clang_13";
-             };
-             clang_14 ={
-                exe = "${clang_14}/bin/clang++";
-                name = "clang_14";
-             };
-             clang_15 ={
-                exe = "${clang_15}/bin/clang++";
-                name = "clang_15";
-             };
-             clang_16 ={
-                exe = "${clang_16}/bin/clang++";
-                name = "clang_16";
-             };
-             clang_17 ={
-                exe = "${clang_17}/bin/clang++";
-                name = "clang_17";
-             };
-        };
+        compiler =  (generateCompilers gccVersions "g++" "gcc") // 
+                    (generateCompilers clangVersions "clang++" "clang");
+
 
         tools = 
         {
             clangquery= 
             {
-                exe="${clang_17}/bin/clang-query";
-                name="clang-query 17";
+                exe="${defaultClang}/bin/clang-query";
+                name="clang-query";
                 type="independent";
                 class="clang-query-tool";
                 stdinHint="Query commands";
@@ -264,7 +230,7 @@ let
             readelf = 
             {
                 name="readelf";
-                exe="${gcc13}/bin/readelf";
+                exe="${defaultGcc}/bin/readelf";
                 type="postcompilation";
                 class="readelf-tool";
                 exclude="djggp";
@@ -274,7 +240,7 @@ let
           nm = 
             {
                 name="nm";
-                exe="${gcc13}/bin/nm";
+                exe="${defaultGcc}/bin/nm";
                 type="postcompilation";
                 class="nm-tool";
                 exclude="djggp";
@@ -283,7 +249,7 @@ let
           strings = 
           {
                 name="strings";
-                exe="${gcc13}/bin/strings";
+                exe="${defaultGcc}/bin/strings";
                 type="postcompilation";
                 class="strings-tool";
                 exclude="djggp";
@@ -292,8 +258,8 @@ let
 
           llvmdwarfdumpdefault = 
           {
-            exe="${llvmPackages_17.bintools-unwrapped}/bin/llvm-dwarfdump";
             name="llvm-dwarfdump";
+            exe="${llvmPackages_17.bintools-unwrapped}/bin/llvm-dwarfdump";
             type="postcompilation";
             class="llvm-dwarfdump-tool";
             stdinHint="disabled";
@@ -301,11 +267,11 @@ let
         };
 
         
-        defaultCompiler="gcc13";
+        defaultCompiler="gcc-${defaultGcc.version}";
         postProcess="";
-        demangler="${gcc13}/bin/c++filt";
+        demangler="${defaultGcc}/bin/c++filt";
         demanglerType="cpp";
-        objdumper="${gcc13}/bin/objdump";
+        objdumper="${defaultGcc}/bin/objdump";
         options="";
         supportsBinary="true";
         supportsBinaryObject="true";
