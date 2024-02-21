@@ -7,6 +7,7 @@
 , gcc48, gcc49, gcc6, gcc7, gcc8, gcc9, gcc10, gcc11, gcc12, gcc13
 , clang_9, clang_11, clang_12, clang_13, clang_14, clang_15, clang_16, clang_17
 , lld_17, llvmPackages_17
+, rustc, rustfilt
 }:
 let
 
@@ -18,6 +19,10 @@ let
     inherit writeText utils defaultGcc defaultClang gcc48 gcc49 gcc6 gcc7 gcc8 gcc9 gcc10 gcc11 gcc12 gcc13 clang_9
             clang_11 clang_12 clang_13 clang_14 clang_15 clang_16 clang_17 lld_17 llvmPackages_17;
      };
+
+   rustConfigFile = import ./cfg/rust.nix {
+    inherit defaultGcc rustc rustfilt writeText utils;
+   };
    ceConfigFile = import ./cfg/compilerExplorer.nix {
     inherit lib writeText utils defaultGcc python3 cmake coreutils;
    };
@@ -38,7 +43,7 @@ let
         inherit version src NODE_DIR;
         pname = "${pname}-node-deps";
         npmDepsHash = "sha256-8e8JtVeJXx1NxwYlN4SRJB2K/RJv9plnAwlRNWHWD1M=";
-        nativeBuildInputs = [cypress nodejs_20 husky typescript];
+        nativeBuildInputs = [nodejs_20 typescript];
         CYPRESS_INSTALL_BINARY = 0;
         dontNpmBuild = true;
         postPatch = "rm Makefile";
@@ -55,7 +60,7 @@ let
 
 in
 stdenv.mkDerivation  rec {
-    inherit pname version src NODE_DIR executionConfigFile ceConfigFile cppConfigFile;
+    inherit pname version src NODE_DIR executionConfigFile ceConfigFile cppConfigFile rustConfigFile;
     postConfigure = ''
         cp -r ${nodeDeps}/lib/node_modules .
         cp etc/config/sponsors.yaml .
@@ -66,6 +71,7 @@ stdenv.mkDerivation  rec {
         cp ${ceConfigFile} etc/config/compiler-explorer.defaults.properties
         cp ${cppConfigFile} etc/config/c++.defaults.properties
         cp ${executionConfigFile} etc/config/execution.defaults.properties
+        cp ${rustConfigFile} etc/config/rust.defaults.properties
     '';
     buildPhase = ''
         npm run webpack
@@ -88,13 +94,14 @@ stdenv.mkDerivation  rec {
     typescript 
     makeWrapper 
     ];
+
   meta = with lib; {
-    description = "HTTP, HTTP2, HTTPS, Websocket debugging proxy";
-    homepage = "https://github.com/avwo/whistle";
-    changelog = "https://github.com/avwo/whistle/blob/${src.rev}/CHANGELOG.md";
-    license = licenses.mit;
-    maintainers = [ maintainers.rucadi ];
-    mainProgram = "whistle";
+    description = "An interactive compiler exploration website";
+    homepage = "https://godbolt.org/";
+    license = licenses.bsd2;
+    maintainers = with maintainers; [ rucadi ];
+    platforms = platforms.all;
+    mainProgram = "compiler-explorer";
   };
   
 }

@@ -2,24 +2,8 @@
 , writeText
 , defaultGcc
 , defaultClang
-, gcc48
-, gcc49
-, gcc6
-, gcc7
-, gcc8
-, gcc9
-, gcc10
-, gcc11 
-, gcc12
-, gcc13
-, clang_9
-, clang_11
-, clang_12
-, clang_13
-, clang_14
-, clang_15
-, clang_16
-, clang_17
+, gcc48, gcc49, gcc6, gcc7, gcc8, gcc9, gcc10, gcc11, gcc12, gcc13
+, clang_9, clang_11, clang_12, clang_13, clang_14, clang_15, clang_16, clang_17
 , lld_17
 , llvmPackages_17
 }:
