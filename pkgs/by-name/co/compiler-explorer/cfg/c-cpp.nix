@@ -6,32 +6,34 @@
 , clang_9, clang_11, clang_12, clang_13, clang_14, clang_15, clang_16, clang_17
 , lld_17
 , llvmPackages_17
+, isC ? true
 }:
 let
     gccVersions = [gcc48 gcc49 gcc6 gcc7 gcc8 gcc9 gcc10 gcc11 gcc12 gcc13];
     clangVersions = [clang_9 clang_11 clang_12 clang_13 clang_14 clang_15 clang_16 clang_17 ];
+    gccCommand = if isC then "gcc" else "g++";
+    clangCommand = if isC then "clang" else "clang++";
+    compilerType = if isC then "c" else "c++";
 
- cpp =
+    gccEntries = utils.mapCompilerToEntry gccVersions "gcc" gccCommand;
+    clangEntries = utils.mapCompilerToEntry clangVersions "clang" clangCommand;
+
+ c_cpp =
     {
         compilers="&gcc:&clang";
         group =
         {
             gcc = {
-                compilers = utils.generateCompilerStrings gccVersions "gcc";
+                compilers = utils.ce_configuredCompilersListFromEntries gccEntries;
                 compilerCategories = "gcc";
             };
-
             clang = {
-                compilers= utils.generateCompilerStrings clangVersions "clang";
+                compilers= utils.ce_configuredCompilersListFromEntries clangEntries;
                 intelAsm="-mllvm --x86-asm-syntax=intel";
                 compilerType="clang";
                 compilerCategories="clang";
             };
         };
-
-        compiler =  (utils.generateCompilers gccVersions "g++" "gcc") // 
-                    (utils.generateCompilers clangVersions "clang++" "clang");
-
 
         tools = 
         {
@@ -93,7 +95,7 @@ let
         };
 
         
-        defaultCompiler="gcc-${defaultGcc.version}";
+        defaultCompiler="${(utils.compilerEntry defaultGcc "gcc" gccCommand).entry}";
         postProcess="";
         demangler="${defaultGcc}/bin/c++filt";
         demanglerType="cpp";
@@ -110,7 +112,10 @@ let
         libs="";
 
     };
-in writeText "c++.defaults.properties" ''
-    ${utils.attrToDot cpp }
+
+in writeText "${compilerType}.defaults.properties" ''
+    ${utils.attrToDot c_cpp }
+    ${utils.ce_configuredCompilerNameAndBinaryListFromEntries "compiler" gccEntries}
+    ${utils.ce_configuredCompilerNameAndBinaryListFromEntries "compiler" clangEntries}
     tools=clangquery:lld:readelf:nm:strings:llvmdwarfdumpdefault
   ''

@@ -8,6 +8,8 @@
 , clang_9, clang_11, clang_12, clang_13, clang_14, clang_15, clang_16, clang_17
 , lld_17, llvmPackages_17
 , rustc, rustfilt
+, zig
+, nim
 }:
 let
 
@@ -15,18 +17,31 @@ let
    defaultGcc = gcc13;
    defaultClang = clang_17;
 
-   cppConfigFile = import ./cfg/cpp.nix {
+   cppConfigFile = import ./cfg/c-cpp.nix {
     inherit writeText utils defaultGcc defaultClang gcc48 gcc49 gcc6 gcc7 gcc8 gcc9 gcc10 gcc11 gcc12 gcc13 clang_9
             clang_11 clang_12 clang_13 clang_14 clang_15 clang_16 clang_17 lld_17 llvmPackages_17;
+        isC = false;
      };
-
+   cConfigFile = import ./cfg/c-cpp.nix {
+    inherit writeText utils defaultGcc defaultClang gcc48 gcc49 gcc6 gcc7 gcc8 gcc9 gcc10 gcc11 gcc12 gcc13 clang_9
+            clang_11 clang_12 clang_13 clang_14 clang_15 clang_16 clang_17 lld_17 llvmPackages_17;
+            isC = true;
+     };
    rustConfigFile = import ./cfg/rust.nix {
     inherit defaultGcc rustc rustfilt writeText utils;
    };
-   ceConfigFile = import ./cfg/compilerExplorer.nix {
+
+   zigConfigFile = import ./cfg/zig.nix {
+    inherit defaultGcc zig writeText utils;
+   };
+   nimConfigFile = import ./cfg/nim.nix {
+    inherit defaultGcc nim writeText utils;
+   };
+
+   ceConfigFile = import ./cfg/compiler-explorer.nix {
     inherit lib writeText utils defaultGcc python3 cmake coreutils;
    };
-   executionConfigFile = import ./cfg/execution.nix {
+   executionConfigFile = import ./cfg/compiler-explorer-execution.nix {
         inherit writeText utils;
    };
 
@@ -60,7 +75,7 @@ let
 
 in
 stdenv.mkDerivation  rec {
-    inherit pname version src NODE_DIR executionConfigFile ceConfigFile cppConfigFile rustConfigFile;
+    inherit pname version src NODE_DIR executionConfigFile ceConfigFile cConfigFile cppConfigFile rustConfigFile zigConfigFile nimConfigFile;
     postConfigure = ''
         cp -r ${nodeDeps}/lib/node_modules .
         cp etc/config/sponsors.yaml .
@@ -69,9 +84,12 @@ stdenv.mkDerivation  rec {
         mv sponsors.yaml etc/config/
         mv site-templates.conf etc/config/
         cp ${ceConfigFile} etc/config/compiler-explorer.defaults.properties
-        cp ${cppConfigFile} etc/config/c++.defaults.properties
         cp ${executionConfigFile} etc/config/execution.defaults.properties
+        cp ${cConfigFile} etc/config/c.defaults.properties
+        cp ${cppConfigFile} etc/config/c++.defaults.properties
         cp ${rustConfigFile} etc/config/rust.defaults.properties
+        cp ${zigConfigFile} etc/config/zig.defaults.properties
+        cp ${nimConfigFile} etc/config/nim.defaults.properties
     '';
     buildPhase = ''
         npm run webpack

@@ -22,16 +22,24 @@ rec {
                     echo '${builtins.toJSON x}' | ${python3}/bin/python ${pythonJsonToDot} > $out
                     '');
                     
+    compilerEntry = (compilerPkg: compilerName: compilerBinary:
+    rec { 
+        type=compilerName;
+        version="${compilerPkg.version}";
+        entry=compilerBinary+"-"+compilerName+"-"+version;  
+        visibleName=compilerName+" "+version;
+        compilerPath="${compilerPkg}/bin/${compilerBinary}";
+        }
+    );
+    mapCompilerToEntry = (compilerList: compilerName: compilerBinary: 
+      (map (compilerPkg : compilerEntry compilerPkg compilerName compilerBinary ) compilerList)
+     );
 
-    createCompilerAttribute = (compiler: command: compiler-name: {
-        exe = "${compiler}/bin/${command}";
-        name = "${compiler-name}-${compiler.version}";
-    });
-    
-    generateCompilers = (compilers: command : compiler-name:
-        lib.foldl' (attrs: compiler: attrs // { "${compiler-name}-${compiler.version}" = createCompilerAttribute compiler command compiler-name; }) {} compilers);
+    ce_configuredCompilersListFromEntries = (entries : builtins.concatStringsSep ":" (map (entry: "${entry.entry}") entries));
 
-    generateCompilerStrings = (compilers: name : builtins.concatStringsSep ":" (map (pkg: "${name}-${pkg.version}") compilers));
-
+    ce_configuredCompilerNameAndBinaryListFromEntries = (prefix: entries: builtins.concatStringsSep "\n" (map (entry: 
+    "${prefix}.${entry.entry}.exe=${entry.compilerPath}"
+    +"\n"+
+    "${prefix}.${entry.entry}.name=${entry.visibleName}") entries));
 
 }
