@@ -17,8 +17,6 @@
 , lld_17, llvmPackages_17
 , rustc, rustfilt
 , gccgo13
-, zig
-, nim2
 }:
 let
 
