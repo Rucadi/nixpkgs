@@ -2,9 +2,9 @@
 , writeText
 , utils
 , defaultGcc
-, python3
 , cmake
 , coreutils
+, python3Full
 }: let 
     settings = 
     {
@@ -31,7 +31,7 @@
 
         tools =
         {
-            python3="${lib.getExe python3}";
+            python3="${lib.getExe python3Full}";
             cmake="${cmake}/bin/cmake";
             useninja="false";
             ld="${defaultGcc}/bin/ld";

@@ -1,4 +1,4 @@
-{lib, writeText, runCommand, python3}:
+{lib, writeText, runCommand, python3Full}:
 rec {
     pythonJsonToDot = writeText "jstodot"  ''
     import sys
@@ -19,7 +19,7 @@ rec {
     '';
 
     attrToDot = x : builtins.readFile (runCommand "jsonToDot.dot" {} ''
-                    echo '${builtins.toJSON x}' | ${python3}/bin/python ${pythonJsonToDot} > $out
+                    echo '${builtins.toJSON x}' | ${python3Full}/bin/python ${pythonJsonToDot} > $out
                     '');
                     
     compilerEntry = (compilerPkg: compilerName: compilerBinary:
