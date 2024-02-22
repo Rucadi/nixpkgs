@@ -4972,8 +4972,6 @@ with pkgs;
 
   dapr-cli = callPackage ../development/tools/dapr/cli { };
 
-  das = callPackage ../tools/security/das { };
-
   dasel = callPackage ../applications/misc/dasel { };
 
   dasher = callPackage ../applications/accessibility/dasher { };
@@ -8642,6 +8640,7 @@ with pkgs;
   };
 
   gnucap = callPackage ../applications/science/electronics/gnucap { };
+  gnucap-full = gnucap.withPlugins(p: [ p.verilog ]);
 
   gnu-cim = callPackage ../development/compilers/gnu-cim { };
 
@@ -16295,6 +16294,8 @@ with pkgs;
 
   go-junit-report = callPackage ../development/tools/go-junit-report { };
 
+  gocover-cobertura = callPackage ../development/tools/gocover-cobertura { };
+
   gobang = callPackage ../development/tools/database/gobang {
     inherit (darwin.apple_sdk.frameworks) CoreFoundation Security SystemConfiguration;
   };
@@ -16561,6 +16562,8 @@ with pkgs;
   llvm_15 = llvmPackages_15.llvm;
   llvm_16 = llvmPackages_16.llvm;
   llvm_17 = llvmPackages_17.llvm;
+
+  mlir_17 = llvmPackages_17.mlir;
 
   libllvm = llvmPackages.libllvm;
   llvm-manpages = llvmPackages.llvm-manpages;
@@ -16872,7 +16875,7 @@ with pkgs;
   cargo-all-features = callPackage ../development/tools/rust/cargo-all-features { };
   cargo-apk = callPackage ../development/tools/rust/cargo-apk { };
   cargo-audit = callPackage ../development/tools/rust/cargo-audit {
-    inherit (darwin.apple_sdk.frameworks) Security;
+    inherit (darwin.apple_sdk.frameworks) Security SystemConfiguration;
   };
   cargo-benchcmp = callPackage ../development/tools/rust/cargo-benchcmp { };
   cargo-binstall = callPackage ../development/tools/rust/cargo-binstall { };
@@ -17752,43 +17755,43 @@ with pkgs;
   python3Full = python3.override {
     self = python3Full;
     pythonAttr = "python3Full";
-    bluezSupport = true;
+    bluezSupport = lib.meta.availableOn stdenv.hostPlatform bluez;
     x11Support = true;
   };
   python38Full = python38.override {
     self = python38Full;
     pythonAttr = "python38Full";
-    bluezSupport = true;
+    bluezSupport = lib.meta.availableOn stdenv.hostPlatform bluez;
     x11Support = true;
   };
   python39Full = python39.override {
     self = python39Full;
     pythonAttr = "python39Full";
-    bluezSupport = true;
+    bluezSupport = lib.meta.availableOn stdenv.hostPlatform bluez;
     x11Support = true;
   };
   python310Full = python310.override {
     self = python310Full;
     pythonAttr = "python310Full";
-    bluezSupport = true;
+    bluezSupport = lib.meta.availableOn stdenv.hostPlatform bluez;
     x11Support = true;
   };
   python311Full = python311.override {
     self = python311Full;
     pythonAttr = "python311Full";
-    bluezSupport = true;
+    bluezSupport = lib.meta.availableOn stdenv.hostPlatform bluez;
     x11Support = true;
   };
   python312Full = python312.override {
     self = python312Full;
     pythonAttr = "python312Full";
-    bluezSupport = true;
+    bluezSupport = lib.meta.availableOn stdenv.hostPlatform bluez;
     x11Support = true;
   };
   python313Full = python313.override {
     self = python313Full;
     pythonAttr = "python313Full";
-    bluezSupport = true;
+    bluezSupport = lib.meta.availableOn stdenv.hostPlatform bluez;
     x11Support = true;
   };
 
@@ -20775,8 +20778,6 @@ with pkgs;
 
   cointop = callPackage ../applications/misc/cointop { };
 
-  collada-dom = callPackage ../development/libraries/collada-dom { };
-
   coloquinte = callPackage ../development/libraries/science/electronics/coloquinte { };
 
   cog = callPackage ../development/web/cog { };
@@ -21966,42 +21967,22 @@ with pkgs;
 
   hyperscan = callPackage ../development/libraries/hyperscan { };
 
-  icu58 = callPackage (import ../development/libraries/icu/58.nix fetchurl) ({
-    nativeBuildRoot = buildPackages.icu58.override { buildRootOnly = true; };
-  });
-  icu60 = callPackage ../development/libraries/icu/60.nix ({
-    nativeBuildRoot = buildPackages.icu60.override { buildRootOnly = true; };
-  });
-  icu63 = callPackage ../development/libraries/icu/63.nix ({
-    nativeBuildRoot = buildPackages.icu63.override { buildRootOnly = true; };
-  });
-  icu64 = callPackage ../development/libraries/icu/64.nix ({
-    nativeBuildRoot = buildPackages.icu64.override { buildRootOnly = true; };
-  });
-  icu66 = callPackage ../development/libraries/icu/66.nix ({
-    nativeBuildRoot = buildPackages.icu66.override { buildRootOnly = true; };
-  });
-  icu67 = callPackage ../development/libraries/icu/67.nix ({
-    nativeBuildRoot = buildPackages.icu67.override { buildRootOnly = true; };
-  });
-  icu68 = callPackage ../development/libraries/icu/68.nix ({
-    nativeBuildRoot = buildPackages.icu68.override { buildRootOnly = true; };
-  });
-  icu69 = callPackage ../development/libraries/icu/69.nix ({
-    nativeBuildRoot = buildPackages.icu69.override { buildRootOnly = true; };
-  });
-  icu70 = callPackage ../development/libraries/icu/70.nix ({
-    nativeBuildRoot = buildPackages.icu70.override { buildRootOnly = true; };
-  });
-  icu71 = callPackage ../development/libraries/icu/71.nix ({
-    nativeBuildRoot = buildPackages.icu71.override { buildRootOnly = true; };
-  });
-  icu72 = callPackage ../development/libraries/icu/72.nix ({
-    nativeBuildRoot = buildPackages.icu72.override { buildRootOnly = true; };
-  });
-  icu73 = callPackage ../development/libraries/icu/73.nix ({
-    nativeBuildRoot = buildPackages.icu72.override { buildRootOnly = true; };
-  });
+  icu-versions = callPackages ../development/libraries/icu { };
+  inherit (icu-versions)
+    icu58
+    icu60
+    icu63
+    icu64
+    icu66
+    icu67
+    icu68
+    icu69
+    icu70
+    icu71
+    icu72
+    icu73
+    icu74
+  ;
 
   icu = icu73;
 
@@ -23636,8 +23617,8 @@ with pkgs;
   in pkgs.buildEnv { # slightly hacky
     name = "libxml2+py-${res.libxml2.version}";
     paths = with libxml2; [ dev bin py ];
-    # Avoid update.nix conflicts with libxml2.
-    passthru = builtins.removeAttrs libxml2.passthru [ "updateScript" ];
+    # Avoid update.nix/tests conflicts with libxml2.
+    passthru = builtins.removeAttrs libxml2.passthru [ "updateScript" "tests" ];
     # the hook to find catalogs is hidden by buildEnv
     postBuild = ''
       mkdir "$out/nix-support"
@@ -23699,8 +23680,6 @@ with pkgs;
   libwacom = callPackage ../development/libraries/libwacom { };
 
   libwacom-surface = callPackage ../development/libraries/libwacom/surface.nix { };
-
-  lightning = callPackage ../development/libraries/lightning { };
 
   lightlocker = callPackage ../misc/screensavers/light-locker { };
 
@@ -23783,7 +23762,7 @@ with pkgs;
 
   mediastreamer-openh264 = callPackage ../development/libraries/mediastreamer/msopenh264.nix { };
 
-  memorymapping = disable-warnings-if-gcc13 (callPackage ../development/libraries/memorymapping { });
+  memorymapping = callPackage ../development/libraries/memorymapping { };
   memorymappingHook = makeSetupHook {
     name = "memorymapping-hook";
     propagatedBuildInputs = [ memorymapping ];
@@ -24077,7 +24056,7 @@ with pkgs;
   nv-codec-headers-12 = callPackage ../development/libraries/nv-codec-headers/12_x.nix { };
 
   nvidiaCtkPackages =
-    callPackage ../applications/virtualization/nvidia-container-toolkit/packages.nix
+    callPackage ../by-name/nv/nvidia-container-toolkit/packages.nix
       { };
   inherit (nvidiaCtkPackages)
     nvidia-docker
@@ -24576,8 +24555,6 @@ with pkgs;
   raylib = callPackage ../development/libraries/raylib { };
 
   readline = readline82;
-
-  readline63 = callPackage ../development/libraries/readline/6.3.nix { };
 
   readline70 = callPackage ../development/libraries/readline/7.0.nix { };
 
@@ -32801,7 +32778,7 @@ with pkgs;
   }) k3s_1_26 k3s_1_27 k3s_1_28;
   inherit (callPackage ../applications/networking/cluster/k3s { }) k3s_1_29;
 
-  k3s = k3s_1_27;
+  k3s = k3s_1_28;
 
   k3sup = callPackage ../applications/networking/cluster/k3sup { };
 
