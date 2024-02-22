@@ -60,19 +60,20 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "openvscode-server";
-  version = "1.84.0";
+  version = "1.86.2";
 
   src = fetchFromGitHub {
     owner = "gitpod-io";
     repo = "openvscode-server";
     rev = "openvscode-server-v${finalAttrs.version}";
-    hash = "sha256-kYKvJrHWKHDIqJsN0j1WFN3OBWwEyNgY5hjNHBg+kKQ=";
+    hash = "sha256-GNqDYqi40X7/og3TacvKyPj6c5amkxTYr/1DsnGV2AI=";
   };
 
   yarnCache = stdenv.mkDerivation {
     name = "${finalAttrs.pname}-${finalAttrs.version}-${system}-yarn-cache";
     inherit (finalAttrs) src;
     nativeBuildInputs = [ cacert yarn' git ];
+    patches = [./node-pty.patch];
     buildPhase = ''
       export HOME=$PWD
 
@@ -89,7 +90,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-oW/JngHpXb8kscikscI7N9csSyZsZQgG75jOdWll6dw=";
+    outputHash = "sha256-sjdLccJg1+3Y5AG3OERgEqjYIq2syoqADLI7sAN2KUU=";
   };
 
   nativeBuildInputs = [
@@ -115,6 +116,7 @@ stdenv.mkDerivation (finalAttrs: {
   patches = [
     # Patch out remote download of nodejs from build script
     ./remove-node-download.patch
+    ./node-pty.patch
   ];
 
   postPatch = ''
