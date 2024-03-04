@@ -9,7 +9,7 @@ let
     extraPackages = cfg.extraPackages
       # setuid shadow
       ++ [ "/run/wrappers" ]
-      ++ lib.optional (builtins.elem "zfs" config.boot.supportedFilesystems) config.boot.zfs.package;
+      ++ lib.optional (config.boot.supportedFilesystems.zfs or false) config.boot.zfs.package;
   });
 
   # Provides a fake "docker" binary mapping to podman
@@ -216,9 +216,11 @@ in
         requires = [ "podman.service" ];
       };
 
+      systemd.services.podman.environment = config.networking.proxy.envVars;
       systemd.sockets.podman.wantedBy = [ "sockets.target" ];
       systemd.sockets.podman.socketConfig.SocketGroup = "podman";
 
+      systemd.user.services.podman.environment = config.networking.proxy.envVars;
       systemd.user.sockets.podman.wantedBy = [ "sockets.target" ];
 
       systemd.timers.podman-prune.timerConfig = lib.mkIf cfg.autoPrune.enable {

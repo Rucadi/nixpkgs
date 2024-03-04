@@ -1,38 +1,34 @@
 {
     "testing": {
-        "version": "6.8-rc5",
-        "hash": "sha256:0cfv90lf0vccpasqxilr62p23qy5in5b9pz2916iifqs9sngj469"
-    },
-    "6.5": {
-        "version": "6.5.13",
-        "hash": "sha256:1dfbbydmayfj9npx3z0g38p574pmcx3qgs49dv0npigl48wd9yvq"
+        "version": "6.8-rc6",
+        "hash": "sha256:03ci53snbv917ccyjdm3xzl2fwijq5da7nkg05dpwb99wrzp8fkd"
     },
     "6.1": {
-        "version": "6.1.78",
-        "hash": "sha256:12fn23m2xwdlv6gr1s8872lk8mvigqkblvlhr54nh8rik2b6n835"
+        "version": "6.1.80",
+        "hash": "sha256:0wdnyy7m9kfkl98id0gm6jzp4aa0hfy6gfkb4k4cg1wbpfpcm3jn"
     },
     "5.15": {
-        "version": "5.15.148",
-        "hash": "sha256:1n75lrck581mppx84cds1a1l5vj05cdkp8ahpry7dx6rgz4pb1f4"
+        "version": "5.15.150",
+        "hash": "sha256:1m74cwsbjwlamxh8vdg2y9jjzk0h7a40adml2p2wszwf8lmmj1gf"
     },
     "5.10": {
-        "version": "5.10.209",
-        "hash": "sha256:1mc8rssk5aypgb58jz6i2bbflfr6qh1kgqpam0k8fqvwcjnjzqj4"
+        "version": "5.10.211",
+        "hash": "sha256:1cir36s369fl6s46x16xnjg0wdlnkipsp2zhz11m9d3z205hly1s"
     },
     "5.4": {
-        "version": "5.4.268",
-        "hash": "sha256:081695lgkdwlrp6gpp6pyflgh76zax1w52shys4s9zjnrfkarj5g"
+        "version": "5.4.270",
+        "hash": "sha256:0svnkpivv5w9b2yyg0z607b84f591d401gxvr8s7kmzdxadhcjqs"
     },
     "4.19": {
-        "version": "4.19.306",
-        "hash": "sha256:06dy270xw4frnrc9p2qjh8chgp02fr5ll5g2b0lx9xqzlq7y86xr"
+        "version": "4.19.308",
+        "hash": "sha256:1j81zdx75m48rvqacw4xlcb13vkvlx0pfq4kdfxrsdfl7wfcwl9a"
     },
     "6.6": {
-        "version": "6.6.17",
-        "hash": "sha256:0si20m9ckir826jg40bh7sh4kwlp610rnc3gwsgs4nm7dfcm0xpf"
+        "version": "6.6.19",
+        "hash": "sha256:16hk8y3pw40hahhpnpxjwhprq6hlblavr45pglpb3d62f9mpwqxm"
     },
     "6.7": {
-        "version": "6.7.5",
-        "hash": "sha256:1zrralagnv9yr8qdg7lc05735691dbh92mgwfyxrq5xqc504dxi9"
+        "version": "6.7.7",
+        "hash": "sha256:1n8lgf814mfslca51pm3nh4icvv1lb5w5l1sxdkf5nqdax28nsr5"
     }
 }

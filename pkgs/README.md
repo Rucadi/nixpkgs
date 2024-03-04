@@ -346,7 +346,7 @@ There are a few naming guidelines:
 
 - The `pname` attribute _should_ be identical to the upstream package name.
 
-- The `pname` and the `version` attribute _must not_ contain uppercase letters — e.g., `"mplayer" instead of `"MPlayer"`.
+- The `pname` and the `version` attribute _must not_ contain uppercase letters — e.g., `"mplayer"` instead of `"MPlayer"`.
 
 - The `version` attribute _must_ start with a digit e.g., `"0.3.1rc2"`.
 
@@ -416,7 +416,6 @@ In the file `pkgs/top-level/all-packages.nix` you can find fetch helpers, these 
 
   ```nix
   src = fetchgit {
-    url = "git@github.com:NixOS/nix.git"
     url = "git://github.com/NixOS/nix.git";
     rev = "1f795f9f44607cc5bec70d1300150bfefcef2aae";
     hash = "sha256-7D4m+saJjbSFP5hOwpQq2FGR2rr+psQMTcyb1ZvtXsQ=";
