@@ -7,29 +7,19 @@
 , writeText
 , compiler-explorer-base
 , gcc48, gcc10, gcc13
-, clang_9, clang_14, clang_17 
+, clang_9, clang_14, clang_17
 , lld_17
 , llvmPackages_17
 }:
 let
+
+  utils = compiler-explorer-base.utils;
 
   defaultGcc = gcc13;
   defaultClang = clang_17;
 
   gccEntries = [gcc48 gcc10 gcc13];
   clangEntries = [clang_9 clang_14 clang_17];
-
-  attrToDot =
-    let
-      attrToDotHelper = prefix: x:
-        lib.concatStrings
-          (lib.mapAttrsToList
-            (k: v:
-              if builtins.elem (builtins.typeOf v) [ "string" "int" "float" ]
-              then "${prefix}${k}=${toString v}\n"
-              else attrToDotHelper "${prefix}${k}." v)
-            x);
-    in attrToDotHelper "";
 
   compilerEntry = (compilerPkg: compilerName: compilerBinary:
     rec {
@@ -60,7 +50,7 @@ let
 
 
 
-  perform_kind = (isC: gccVersions: clangVersions: 
+  perform_kind = (isC: gccVersions: clangVersions:
     let
         gccCommand = if isC then "gcc" else "g++";
         clangCommand = if isC then "clang" else "clang++";
@@ -160,9 +150,9 @@ let
         libs = "";
 
       };
-    in 
+    in
     writeText "${compilerType}.defaults.properties" ''
-        ${attrToDot c_cpp }
+        ${utils.attrToDot c_cpp }
         ${ce_configuredCompilerNameAndBinaryListFromEntries "compiler" gccEntries}
         ${ce_configuredCompilerNameAndBinaryListFromEntries "compiler" clangEntries}
         tools=clangquery:lld:readelf:nm:strings:llvmdwarfdumpdefault
@@ -179,7 +169,7 @@ stdenv.mkDerivation {
   pname = "compiler-explorer-cpp";
   name = "Compiler Explorer GCC/CLANG";
   version = compiler-explorer-base.version;
-  
+
   phases = [ "installPhase" ];
 
   nativeBuildInputs = [makeWrapper];
