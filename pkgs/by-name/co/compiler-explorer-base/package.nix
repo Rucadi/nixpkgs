@@ -21,9 +21,6 @@ let
   /** Defines the configuration files. Within this attrset, each key will create a
       new properties file at "etc/config/<key>.nix.properties" */
   base-configs = {
-    builtin = {
-      sourcePath = "@dist@/examples";
-    };
     execution = {
       cewrapper.config.sandbox = "etc/cewrapper/user-execution.json";
       cewrapper.config.execute = "etc/cewrapper/compilers-and-tools.json";
@@ -48,16 +45,16 @@ in
 buildNpmPackage rec {
 
   pname = "compiler-explorer";
-  version = "10723";
+  version = "10945";
 
   src = fetchFromGitHub {
     owner = "compiler-explorer";
     repo = "compiler-explorer";
     rev = "gh-${version}";
-    hash = "sha256-e8G1WNII61FWGscxSTlB2GvDP5e3945AslDP2h4jr2k=";
+    hash = "sha256-U0nUYxPzzGt1zrx2k3foRh20I8sPjJMD8eVgHVwMUxk=";
   };
 
-  npmDepsHash = "sha256-8e8JtVeJXx1NxwYlN4SRJB2K/RJv9plnAwlRNWHWD1M=";
+  npmDepsHash = "sha256-k17w17udlFf+GkGURyadZknSocYp9PTkf+8LiuTLaFk=";
 
   nativeBuildInputs = [ ];
 
@@ -74,8 +71,6 @@ buildNpmPackage rec {
   '';
 
   preInstall = ''
-    export dist=$out/lib/node_modules/compiler-explorer
-
     cp -vR ./etc $etc
     cp -vR -L ${utils.makeConfigs base-configs}/. $etc/.
 
@@ -87,19 +82,25 @@ buildNpmPackage rec {
   '';
 
   postInstall = ''
-    # trim file size, following upstream's build-dist.sh
-    rm -rf $dist/node_modules/.cache/ $dist/node_modules/monaco-editor/
-    find $dist/node_modules -name \*.ts -delete
+    installed=$out/lib/node_modules/compiler-explorer
 
-    cp -rv out $dist
+    # trim file size, following upstream's build-dist.sh
+    rm -rf $installed/node_modules/.cache/ $installed/node_modules/monaco-editor/
+    find $installed/node_modules -name \*.ts -delete
+
+    cp -rv out $installed
+    ln -sv $installed/examples $installed/out/dist
+    ln -sv $installed/views $installed/out/dist
+    ln -sv $etc $installed/out/dist/etc
 
     mkdir -p $out/bin
     makeWrapper ${nodejs}/bin/node $out/bin/compiler-explorer \
+      --chdir $installed/out/dist \
       --set NODE_ENV production \
-      --set-default COMPILER_EXPLORER_ETC $etc/etc/compiler-explorer \
-      --add-flags $dist/out/dist/app.js \
+      --set-default COMPILER_EXPLORER_ETC $etc \
+      --add-flags $installed/out/dist/app.js \
       --add-flags --dist \
-      --add-flags "--webpackContent $out/static" \
+      --add-flags "--webpackContent $installed/out/webpack/static" \
       --add-flags "--env nix" \
       --add-flags '--rootDir $COMPILER_EXPLORER_ETC'
   '';
