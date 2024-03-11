@@ -14,6 +14,7 @@
 , cmake
 , coreutils
 , binutils
+, ...
 }:
 let
   utils = callPackage ./utils.nix {};
@@ -92,17 +93,6 @@ buildNpmPackage rec {
     ln -sv $installed/examples $installed/out/dist
     ln -sv $installed/views $installed/out/dist
     ln -sv $etc $installed/out/dist/etc
-
-    mkdir -p $out/bin
-    makeWrapper ${nodejs}/bin/node $out/bin/compiler-explorer \
-      --chdir $installed/out/dist \
-      --set NODE_ENV production \
-      --set-default COMPILER_EXPLORER_ETC $etc \
-      --add-flags $installed/out/dist/app.js \
-      --add-flags --dist \
-      --add-flags "--webpackContent $installed/out/webpack/static" \
-      --add-flags "--env nix" \
-      --add-flags '--rootDir $COMPILER_EXPLORER_ETC'
   '';
 
   # out is for main program files. etc stores the default ./etc/ configuration files.
