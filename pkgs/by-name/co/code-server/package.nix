@@ -12,22 +12,25 @@
 , yarn
 , python3
 , esbuild
-, nodejs
-, node-gyp
+, nodejs_18
 , libsecret
 , xorg
 , ripgrep
-, AppKit
-, Cocoa
-, CoreServices
-, Security
-, cctools
 , xcbuild
 , quilt
+, prefetch-yarn-deps
+, fetchYarnDeps
+, writeShellScript
 , nixosTests
+, buildEnv
+, darwin
 }:
-
 let
+  nodejs = nodejs_18;
+  inherit (darwin.apple_sdk.frameworks) AppKit Cocoa CoreServices Security;
+  inherit (darwin) cctools;
+  inherit (nodejs.pkgs) node-gyp;
+
   system = stdenv.hostPlatform.system;
 
   python = python3;
@@ -73,49 +76,50 @@ let
   # Example: `$ git rev-parse v4.16.1`
   commit = "0c98611e6b43803a9d5dba222d7023b569abfb49";
 in
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation (finalAttrs: rec {
   pname = "code-server";
-  version = "4.19.1";
+  version = "4.22.1";
 
   src = fetchFromGitHub {
     owner = "coder";
     repo = "code-server";
     rev = "v${finalAttrs.version}";
     fetchSubmodules = true;
-    hash = "sha256-J+6zuqVf1YKQjiRiqO4867DEwYzZsgQYgbsRXPo2hwY=";
+    hash = "sha256-rudK3cPbRB4aDUbGU2miYil9VlPOCNuvneWkChdQS+I=";
   };
 
-  yarnCache = stdenv.mkDerivation {
-    name = "${finalAttrs.pname}-${finalAttrs.version}-${system}-yarn-cache";
-    inherit (finalAttrs) src;
 
-    nativeBuildInputs = [ yarn' git cacert ];
-
-    buildPhase = ''
-      runHook preBuild
-
-      export HOME=$PWD
-      export GIT_SSL_CAINFO="${cacert}/etc/ssl/certs/ca-bundle.crt"
-
-      yarn --cwd "./vendor" install --modules-folder modules --ignore-scripts --frozen-lockfile
-
-      yarn config set yarn-offline-mirror $out
-      find "$PWD" -name "yarn.lock" -printf "%h\n" | \
-        xargs -I {} yarn --cwd {} \
-          --frozen-lockfile --ignore-scripts --ignore-platform \
-          --ignore-engines --no-progress --non-interactive
-
-      find ./lib/vscode -name "yarn.lock" -printf "%h\n" | \
-        xargs -I {} yarn --cwd {} \
-          --ignore-scripts --ignore-engines
-
-      runHook postBuild
-    '';
-
-    outputHashMode = "recursive";
-    outputHashAlgo = "sha256";
-    outputHash = "sha256-g2rwB+PuWuYgrzIuW0ngia7cdPMC8s7ffBEkbmPPzB4=";
-  };
+yarnOfflineCache = buildEnv {
+  name = "code-server-yarn-cache";
+  ignoreCollisions = true;
+  paths = 
+  [ 
+    (fetchYarnDeps {
+    yarnLock = src + "/yarn.lock";
+    hash = "sha256-x1ujBk1qto2/Gi256s3Y6l70F7xGjC25dkFp6fVTnmE=";
+    })
+    (fetchYarnDeps {
+    yarnLock = src + "/test/yarn.lock";
+    hash = "sha256-844XUI/aLw7GeJQYxvIw82QdZxOHmc4n2HNk/hfClh4=";
+    })
+    (fetchYarnDeps{
+    yarnLock = src + "/test/e2e/extensions/test-extension/yarn.lock";
+    hash = "sha256-RGMchnPVAdvUjTZwmOhvEmiq210AivJiIiqYWz/kt00=";
+    })
+    (fetchYarnDeps{
+    yarnLock = src + "/test/unit/node/test-plugin/yarn.lock";
+    hash = "sha256-dnspYsUD8CaIREjd2N7mZ+DBSQUW300ohm4HvORVWFs=";
+    })
+    (fetchYarnDeps{
+    yarnLock = ./vendor/yarn.lock;
+    hash = "sha256-K0WxmiiKSuhCPwKBVy7b4gZLYlzYV6rn/pGuMeXU1LQ=";
+    })
+    (fetchYarnDeps{
+    yarnLock = ./argon2/yarn.lock;
+    hash = "sha256-w/VSqYBDJjgyg6dbRv/gqqt6FXOVwtXZaA43C2bZRR8=";
+    })
+  ];
+};
 
   nativeBuildInputs = [
     nodejs
@@ -128,6 +132,7 @@ stdenv.mkDerivation (finalAttrs: {
     jq
     moreutils
     quilt
+    prefetch-yarn-deps
   ];
 
   buildInputs = lib.optionals (!stdenv.isDarwin) [ libsecret ]
@@ -165,26 +170,30 @@ stdenv.mkDerivation (finalAttrs: {
     # run yarn offline by default
     echo '--install.offline true' >> .yarnrc
 
+    # Without this, yarn will try to download the dependencies
+    fixup-yarn-lock yarn.lock
+    fixup-yarn-lock test/yarn.lock
+    fixup-yarn-lock test/e2e/extensions/test-extension/yarn.lock
+    fixup-yarn-lock test/unit/node/test-plugin/yarn.lock
+
+
     # set default yarn opts
     ${lib.concatMapStrings (option: ''
       yarn --offline config set ${option}
     '') defaultYarnOpts}
 
     # set offline mirror to yarn cache we created in previous steps
-    yarn --offline config set yarn-offline-mirror "${finalAttrs.yarnCache}"
+    yarn --offline config set yarn-offline-mirror "${finalAttrs.yarnOfflineCache}"
 
     # skip unnecessary electron download
     export ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
     # set nodedir to prevent node-gyp from downloading headers
-    # taken from https://nixos.org/manual/nixpkgs/stable/#javascript-tool-specific
     mkdir -p $HOME/.node-gyp/${nodejs.version}
     echo 9 > $HOME/.node-gyp/${nodejs.version}/installVersion
     ln -sfv ${nodejs}/include $HOME/.node-gyp/${nodejs.version}
     export npm_config_nodedir=${nodejs}
 
-    # use updated node-gyp. fixes the following error on Darwin:
-    # PermissionError: [Errno 1] Operation not permitted: '/usr/sbin/pkgutil'
     export npm_config_node_gyp=${node-gyp}/lib/node_modules/node-gyp/bin/node-gyp.js
 
     runHook postConfigure
@@ -213,6 +222,7 @@ stdenv.mkDerivation (finalAttrs: {
     # Replicate ci/dev/postinstall.sh
     echo "----- Replicate ci/dev/postinstall.sh"
     yarn --cwd "./vendor" install --modules-folder modules --offline --ignore-scripts --frozen-lockfile
+
 
     # remove all built-in extensions, as these are 3rd party extensions that
     # get downloaded from vscode marketplace
@@ -320,7 +330,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     homepage = "https://github.com/coder/code-server";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ offline henkery code-asher ];
+    maintainers = with lib.maintainers; [ offline henkery code-asher rucadi ];
     platforms = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" ];
     mainProgram = "code-server";
   };
