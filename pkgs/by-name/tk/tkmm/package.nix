@@ -14,6 +14,9 @@
   libXext,
   libXi,
   libXrandr,
+  fontconfig,
+  freetype,
+  p7zip
 }:
 buildDotnetModule (finalAttrs: {
   pname = "Tkmm";
@@ -46,6 +49,7 @@ buildDotnetModule (finalAttrs: {
   nativeBuildInputs = [ copyDesktopItems ];
 
   runtimeDeps = [
+    fontconfig
     # Avalonia UI
     libX11
     libGL
@@ -56,6 +60,12 @@ buildDotnetModule (finalAttrs: {
     libXext
     libXi
     libXrandr
+    # Freetype and Fontconfig for text rendering
+    freetype
+    fontconfig
+    # 7zip 
+    p7zip
+
   ];
 
   enableParallelBuilding = false;
